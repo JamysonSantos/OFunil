@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Channels Funnels — Mapa visual de funis</title>
+    <meta
+      name="description"
+      content="Ferramenta visual para desenhar e documentar a jornada do cliente em funis de marketing e lançamento."
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <!-- Barra superior -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="dot"></span>
+        <div>
+          <h1>Channels Funnels</h1>
+          <p>Mapa visual da jornada do cliente</p>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="btn-new-step" class="btn btn-primary">+ Nova Etapa</button>
+        <button id="btn-new-decision" class="btn">+ Decisão</button>
+        <span class="sep"></span>
+        <button id="btn-undo" class="btn btn-icon" title="Desfazer (Ctrl+Z)">↶</button>
+        <button id="btn-redo" class="btn btn-icon" title="Refazer (Ctrl+Shift+Z)">↷</button>
+        <span class="sep"></span>
+        <button id="btn-zoom-out" class="btn btn-icon" title="Zoom -">−</button>
+        <button id="btn-zoom-reset" class="btn btn-icon" title="Reiniciar zoom">100%</button>
+        <button id="btn-zoom-in" class="btn btn-icon" title="Zoom +">+</button>
+        <span class="sep"></span>
+        <button id="btn-clear" class="btn btn-ghost" title="Limpar quadro">Limpar</button>
+      </div>
+    </header>
+
+    <!-- Canvas -->
+    <main id="canvas" class="canvas">
+      <div id="world" class="world">
+        <svg id="edges" class="edges"></svg>
+        <div id="nodes" class="nodes"></div>
+      </div>
+
+      <p id="empty-hint" class="empty-hint">
+        Clique em <strong>+ Nova Etapa</strong> para começar.<br />
+        Arraste os blocos, puxe o ponto da direita para conectar, dê duplo clique para editar.
+      </p>
+
+      <div class="hint-bar">
+        Roda do mouse: zoom · Arrastar fundo: mover · Duplo clique no bloco: editar
+      </div>
+    </main>
+
+    <!-- Modal de criação -->
+    <div id="modal" class="overlay hidden">
+      <form id="create-form" class="modal">
+        <h2 id="create-title">Nova Etapa</h2>
+        <label>
+          Nome da Etapa
+          <input id="create-name" autocomplete="off" placeholder="Ex.: Página de Captação" required />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn btn-primary">Criar</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Painel lateral de edição -->
+    <aside id="panel" class="panel hidden">
+      <div class="panel-head">
+        <h2>Editar etapa</h2>
+        <button id="panel-close" class="btn btn-icon" title="Fechar">✕</button>
+      </div>
+
+      <div class="panel-body">
+        <label>
+          Nome
+          <input id="panel-name" autocomplete="off" />
+        </label>
+
+        <label>
+          Observações
+          <textarea id="panel-notes" rows="5" placeholder="Anotações livres sobre esta etapa..."></textarea>
+        </label>
+
+        <section>
+          <div class="section-head">
+            <h3>Links</h3>
+            <button id="panel-add-link" class="btn btn-small">+ Adicionar link</button>
+          </div>
+          <div id="panel-links" class="links"></div>
+        </section>
+
+        <section>
+          <div class="section-head">
+            <h3>Arquivos</h3>
+            <label class="btn btn-small file-btn">
+              + Anexar
+              <input id="panel-files" type="file" multiple hidden />
+            </label>
+          </div>
+          <ul id="panel-file-list" class="file-list"></ul>
+        </section>
+      </div>
+
+      <div class="panel-foot">
+        <button id="panel-duplicate" class="btn">Duplicar</button>
+        <button id="panel-delete" class="btn btn-danger">Excluir</button>
+      </div>
+    </aside>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
