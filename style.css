@@ -1,0 +1,515 @@
+/* ============================================================
+   Channels Funnels — estilos (tema escuro, minimalista)
+   ============================================================ */
+
+:root {
+  --bg: #0d1014;
+  --bg-grid: #161b22;
+  --surface: #151a21;
+  --surface-2: #1c232c;
+  --border: #262f3a;
+  --text: #e7ecf2;
+  --muted: #8b98a8;
+  --accent: #35d39a;
+  --accent-2: #f0b429;
+  --danger: #ef5f6b;
+  --radius: 14px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --font: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  overflow: hidden;
+}
+
+/* ---------- Barra superior ---------- */
+.topbar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+  background: rgba(19, 24, 31, 0.92);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 14px var(--accent);
+}
+.brand h1 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0.4px;
+}
+.brand p {
+  margin: 1px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sep {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+/* ---------- Botões ---------- */
+.btn {
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.btn:hover {
+  background: #232c37;
+  border-color: #33404f;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #06231a;
+  font-weight: 600;
+}
+.btn-primary:hover {
+  background: #45e1a8;
+  border-color: #45e1a8;
+}
+.btn-icon {
+  min-width: 34px;
+  padding: 7px 8px;
+  text-align: center;
+}
+.btn-ghost {
+  background: transparent;
+}
+.btn-small {
+  font-size: 12px;
+  padding: 5px 9px;
+  border-radius: 8px;
+}
+.btn-danger {
+  color: #fff;
+  background: #6d2730;
+  border-color: #8b3340;
+}
+.btn-danger:hover {
+  background: #83303b;
+}
+
+/* ---------- Canvas ---------- */
+.canvas {
+  position: absolute;
+  inset: 58px 0 0 0;
+  overflow: hidden;
+  cursor: grab;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 1px 1px, var(--bg-grid) 1.4px, transparent 0);
+  background-size: 26px 26px;
+}
+.canvas.panning {
+  cursor: grabbing;
+}
+
+.world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  width: 1px;
+  height: 1px;
+}
+
+.edges {
+  position: absolute;
+  overflow: visible;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+.edges .edge-hit {
+  stroke: transparent;
+  stroke-width: 18;
+  fill: none;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.edges .edge-line {
+  fill: none;
+  stroke: #3c8f78;
+  stroke-width: 2;
+  transition: stroke 0.15s ease;
+}
+.edges .edge-group:hover .edge-line {
+  stroke: var(--accent);
+}
+.edges .edge-label {
+  fill: var(--text);
+  font: 600 11px var(--font);
+  text-anchor: middle;
+  pointer-events: none;
+}
+.edges .edge-label-bg {
+  fill: var(--surface-2);
+  stroke: var(--border);
+  rx: 6;
+  pointer-events: none;
+}
+.edges .temp-line {
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+
+.nodes {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* ---------- Blocos ---------- */
+.node {
+  position: absolute;
+  width: 210px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px 14px;
+  cursor: grab;
+  user-select: none;
+  animation: pop 0.18s ease-out;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.node:hover {
+  border-color: #3a4757;
+}
+.node.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(53, 211, 154, 0.25), var(--shadow);
+}
+.node.dragging {
+  cursor: grabbing;
+}
+.node.decision {
+  border-color: #6b5620;
+  background: linear-gradient(180deg, #1e1a12, var(--surface));
+}
+
+.node .kind {
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.node.decision .kind {
+  color: var(--accent-2);
+}
+.node .title {
+  margin-top: 3px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  word-break: break-word;
+}
+.node .meta {
+  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* pontos de conexão */
+.port {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 2px solid var(--accent);
+  cursor: crosshair;
+  transition: transform 0.12s ease;
+}
+.port:hover {
+  transform: scale(1.25);
+}
+.port.out {
+  right: -8px;
+}
+.port.in {
+  left: -8px;
+  border-color: #4a5665;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ---------- Dicas ---------- */
+.empty-hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  pointer-events: none;
+}
+.empty-hint.hidden {
+  display: none;
+}
+.hint-bar {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(21, 26, 33, 0.85);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 999px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ---------- Modal ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(5, 8, 11, 0.6);
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(3px);
+}
+.overlay.hidden,
+.panel.hidden {
+  display: none;
+}
+
+.modal {
+  width: min(420px, 92vw);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  animation: pop 0.16s ease-out;
+}
+.modal h2 {
+  margin: 0 0 14px;
+  font-size: 16px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ---------- Formulários ---------- */
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+input,
+textarea {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: #10151b;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 11px;
+  outline: none;
+  resize: vertical;
+}
+input:focus,
+textarea:focus {
+  border-color: var(--accent);
+}
+
+/* ---------- Painel lateral ---------- */
+.panel {
+  position: fixed;
+  top: 58px;
+  right: 0;
+  bottom: 0;
+  width: min(380px, 94vw);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -14px 0 40px rgba(0, 0, 0, 0.4);
+  animation: slide 0.18s ease-out;
+}
+@keyframes slide {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.panel-head,
+.panel-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-foot {
+  border-bottom: none;
+  border-top: 1px solid var(--border);
+}
+.panel-head h2 {
+  margin: 0;
+  font-size: 14px;
+}
+.panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+.panel-body section {
+  margin-top: 18px;
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.section-head h3 {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+}
+.file-btn {
+  margin: 0;
+  color: var(--text);
+  display: inline-block;
+}
+
+/* links */
+.link-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.link-card .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.link-card .row span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.link-card .row .tools {
+  display: flex;
+  gap: 4px;
+}
+.link-card label {
+  margin-bottom: 8px;
+}
+
+.file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.file-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 7px 10px;
+  margin-bottom: 6px;
+}
+.file-list a {
+  color: var(--accent);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.empty {
+  font-size: 12px;
+  color: var(--muted);
+}
