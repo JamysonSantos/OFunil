@@ -29,6 +29,8 @@
 
   let selectedNodeId = null;
   let editingNodeId = null;
+  let linkPopupNodeId = null;
+  let clickTimeout = null;
 
   const uid = () => Math.random().toString(36).slice(2, 10);
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -89,6 +91,7 @@
 
   function afterHistory() {
     if (!state.nodes.some((n) => n.id === editingNodeId)) closePanel();
+    if (!state.nodes.some((n) => n.id === linkPopupNodeId)) closeLinkPopup();
     save();
     render();
   }
@@ -412,7 +415,17 @@
     if (drag.mode === "node") {
       const box = nodeEls.get(drag.id);
       if (box) box.classList.remove("dragging");
-      if (drag.moved) save();
+      if (drag.moved) {
+        save();
+      } else {
+        const node = state.nodes.find((n) => n.id === drag.id);
+        if (node && (node.links || []).length) {
+          if (clickTimeout) clearTimeout(clickTimeout);
+          clickTimeout = setTimeout(() => showLinkPopup(node.id), 220);
+        } else {
+          closeLinkPopup();
+        }
+      }
     }
 
     if (drag.mode === "pan") {
@@ -425,6 +438,11 @@
 
   // duplo clique abre o painel de edição
   el.canvas.addEventListener("dblclick", (e) => {
+    if (clickTimeout) {
+      clearTimeout(clickTimeout);
+      clickTimeout = null;
+    }
+    closeLinkPopup();
     // Usa hit-test por coordenada: durante o arraste o pointer capture
     // pode reatribuir o target do clique para o canvas.
     const target = document.elementFromPoint(e.clientX, e.clientY);
@@ -439,6 +457,90 @@
     if (selectedNodeId === id) return;
     selectedNodeId = id;
     nodeEls.forEach((box, nodeId) => box.classList.toggle("selected", nodeId === id));
+    if (id === null) closeLinkPopup();
+  }
+
+  /* ------------------------------------------------------------
+     Popup de links (clique simples)
+     ------------------------------------------------------------ */
+  function closeLinkPopup() {
+    if (clickTimeout) {
+      clearTimeout(clickTimeout);
+      clickTimeout = null;
+    }
+    document.removeEventListener("click", outsideLinkPopupClick);
+    const existing = document.querySelector(".link-popup");
+    if (existing) existing.remove();
+    linkPopupNodeId = null;
+  }
+
+  function outsideLinkPopupClick(e) {
+    const popup = document.querySelector(".link-popup");
+    if (!popup) return;
+    if (!popup.contains(e.target)) closeLinkPopup();
+  }
+
+  function showLinkPopup(nodeId) {
+    const node = state.nodes.find((n) => n.id === nodeId);
+    if (!node || !(node.links || []).length) return;
+    closeLinkPopup();
+    linkPopupNodeId = nodeId;
+
+    const box = nodeEls.get(nodeId);
+    if (!box) return;
+    const rect = box.getBoundingClientRect();
+
+    const popup = document.createElement("div");
+    popup.className = "link-popup";
+
+    const title = document.createElement("h4");
+    title.textContent = "Links";
+    popup.append(title);
+
+    const list = document.createElement("ul");
+    node.links.forEach((link) => {
+      const li = document.createElement("li");
+      if (link.url) {
+        const a = document.createElement("a");
+        a.href = link.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.textContent = link.name || link.url;
+        li.append(a);
+      } else {
+        const span = document.createElement("span");
+        span.textContent = link.name || "Link sem URL";
+        li.append(span);
+      }
+      if (link.note) {
+        const note = document.createElement("small");
+        note.textContent = link.note;
+        li.append(note);
+      }
+      list.append(li);
+    });
+    popup.append(list);
+
+    document.body.appendChild(popup);
+
+    // Posiciona acima do bloco, centralizado; ajusta se sair da tela.
+    const pRect = popup.getBoundingClientRect();
+    const pad = 12;
+    let left = rect.left + rect.width / 2 - pRect.width / 2;
+    let top = rect.top - pRect.height - 8;
+    if (left < pad) left = pad;
+    if (left + pRect.width > window.innerWidth - pad) {
+      left = window.innerWidth - pRect.width - pad;
+    }
+    if (top < pad) {
+      top = rect.bottom + 8;
+    }
+    popup.style.left = left + "px";
+    popup.style.top = top + "px";
+
+    setTimeout(() => {
+      document.addEventListener("click", outsideLinkPopupClick);
+    }, 0);
   }
 
   function createNode(name, type) {
@@ -456,6 +558,7 @@
     const node = { id: uid(), type, name, notes: "", links: [], x, y };
     commit();
     state.nodes.push(node);
+    closeLinkPopup();
     save();
     render();
     selectNode(node.id);
@@ -472,6 +575,7 @@
     copy.x = node.x + 40;
     copy.y = node.y + 60;
     state.nodes.push(copy);
+    closeLinkPopup();
     save();
     render();
     selectNode(copy.id);
@@ -482,6 +586,7 @@
     state.nodes = state.nodes.filter((n) => n.id !== id);
     state.edges = state.edges.filter((e) => e.from !== id && e.to !== id);
     if (editingNodeId === id) closePanel();
+    if (linkPopupNodeId === id) closeLinkPopup();
     save();
     render();
   }
@@ -491,6 +596,7 @@
     if (exists) return;
     commit();
     state.edges.push({ id: uid(), from: fromId, to: toId, label: "" });
+    closeLinkPopup();
     save();
     render();
   }
@@ -536,6 +642,7 @@
   function openPanel(id) {
     const node = state.nodes.find((n) => n.id === id);
     if (!node) return;
+    closeLinkPopup();
     editingNodeId = id;
     selectNode(id);
     el.panelName.value = node.name;
@@ -776,6 +883,7 @@
         const nameInput = document.getElementById("funnel-name");
         if (nameInput) nameInput.value = state.name;
         closePanel();
+        closeLinkPopup();
         save();
         render();
       } catch (err) {
@@ -817,11 +925,14 @@
     save();
   });
   document.getElementById("btn-clear").addEventListener("click", () => {
-    if (!state.nodes.length) return;
+    if (!state.nodes.length && !state.name) return;
     if (!window.confirm("Limpar todo o quadro?")) return;
     commit();
-    state = { nodes: [], edges: [] };
+    state = { name: "", nodes: [], edges: [] };
+    const nameInput = document.getElementById("funnel-name");
+    if (nameInput) nameInput.value = "";
     closePanel();
+    closeLinkPopup();
     save();
     render();
   });
