@@ -106,8 +106,6 @@
     panelName: document.getElementById("panel-name"),
     panelNotes: document.getElementById("panel-notes"),
     panelLinks: document.getElementById("panel-links"),
-    panelFiles: document.getElementById("panel-files"),
-    panelFileList: document.getElementById("panel-file-list"),
     zoomReset: document.getElementById("btn-zoom-reset"),
   };
 
@@ -142,7 +140,6 @@
       box.dataset.id = node.id;
 
       const linksCount = (node.links || []).length;
-      const filesCount = (node.files || []).length;
 
       const kind = document.createElement("div");
       kind.className = "kind";
@@ -154,25 +151,30 @@
 
       box.append(kind, title);
 
-      if (linksCount || filesCount || node.notes) {
+      if (linksCount || node.notes) {
         const meta = document.createElement("div");
         meta.className = "meta";
         if (linksCount) meta.append(tag("🔗 " + linksCount));
-        if (filesCount) meta.append(tag("📎 " + filesCount));
         if (node.notes) meta.append(tag("📝"));
         box.append(meta);
       }
 
-      const inPort = document.createElement("div");
-      inPort.className = "port in";
-      inPort.title = "Entrada";
+      // Etapas iniciais (sem conexão de entrada) exibem apenas a saída.
+      const hasIncoming = state.edges.some((edge) => edge.to === node.id);
+      let inPort = null;
+      if (hasIncoming) {
+        inPort = document.createElement("div");
+        inPort.className = "port in";
+        inPort.title = "Entrada";
+      }
 
       const outPort = document.createElement("div");
       outPort.className = "port out";
       outPort.title = "Arraste para conectar";
       outPort.dataset.port = "out";
 
-      box.append(inPort, outPort);
+      if (inPort) box.append(inPort);
+      box.append(outPort);
       el.nodes.append(box);
       nodeEls.set(node.id, box);
     });
@@ -447,7 +449,7 @@
       x = last.x + NODE_WIDTH + 110;
       y = last.y;
     }
-    const node = { id: uid(), type, name, notes: "", links: [], files: [], x, y };
+    const node = { id: uid(), type, name, notes: "", links: [], x, y };
     commit();
     state.nodes.push(node);
     save();
@@ -535,7 +537,6 @@
     el.panelName.value = node.name;
     el.panelNotes.value = node.notes || "";
     renderPanelLinks();
-    renderPanelFiles();
     el.panel.classList.remove("hidden");
   }
 
@@ -685,61 +686,6 @@
     renderPanelLinks();
   }
 
-  /* Arquivos: guardados apenas na sessão via URL de objeto do navegador. */
-  el.panelFiles.addEventListener("change", () => {
-    const node = currentNode();
-    if (!node) return;
-    commit();
-    node.files = node.files || [];
-    Array.from(el.panelFiles.files).forEach((file) => {
-      node.files.push({
-        id: uid(),
-        name: file.name,
-        size: file.size,
-        url: URL.createObjectURL(file),
-      });
-    });
-    el.panelFiles.value = "";
-    save();
-    renderPanelFiles();
-    render();
-  });
-
-  function renderPanelFiles() {
-    const node = currentNode();
-    el.panelFileList.textContent = "";
-    if (!node) return;
-    const files = node.files || [];
-
-    if (!files.length) {
-      const li = document.createElement("li");
-      li.className = "empty";
-      li.textContent = "Nenhum arquivo anexado.";
-      el.panelFileList.append(li);
-      return;
-    }
-
-    files.forEach((file) => {
-      const li = document.createElement("li");
-      const link = document.createElement("a");
-      link.href = file.url || "#";
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.textContent = file.name;
-      li.append(link);
-      li.append(
-        toolBtn("✕", "Remover arquivo", () => {
-          commit();
-          node.files = node.files.filter((f) => f.id !== file.id);
-          save();
-          renderPanelFiles();
-          render();
-        }),
-      );
-      el.panelFileList.append(li);
-    });
-  }
-
   document.getElementById("panel-duplicate").addEventListener("click", () => {
     if (editingNodeId) duplicateNode(editingNodeId);
   });
@@ -747,6 +693,89 @@
   document.getElementById("panel-delete").addEventListener("click", () => {
     if (!editingNodeId) return;
     if (window.confirm("Excluir esta etapa e suas conexões?")) deleteNode(editingNodeId);
+  });
+
+  /* ------------------------------------------------------------
+     Exportar / Importar (formato .json nativo da ferramenta)
+     ------------------------------------------------------------ */
+  const FILE_FORMAT = "channels-funnels";
+  const FILE_VERSION = 1;
+
+  function exportBoard() {
+    const payload = {
+      format: FILE_FORMAT,
+      version: FILE_VERSION,
+      exportedAt: new Date().toISOString(),
+      view: view,
+      nodes: state.nodes,
+      edges: state.edges,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = "channels-funnels-" + stamp + ".json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importBoard(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result));
+        if (!data || !Array.isArray(data.nodes)) throw new Error("Arquivo inválido");
+        if (data.format && data.format !== FILE_FORMAT) throw new Error("Formato incompatível");
+
+        // Normaliza os dados para o formato interno atual.
+        const nodes = data.nodes.map((n) => ({
+          id: n.id || uid(),
+          type: n.type === "decision" ? "decision" : "step",
+          name: n.name || "Etapa",
+          notes: n.notes || "",
+          links: Array.isArray(n.links)
+            ? n.links.map((l) => ({
+                id: l.id || uid(),
+                name: l.name || "",
+                url: l.url || "",
+                note: l.note || "",
+              }))
+            : [],
+          x: Number(n.x) || 0,
+          y: Number(n.y) || 0,
+        }));
+        const ids = new Set(nodes.map((n) => n.id));
+        const edges = (Array.isArray(data.edges) ? data.edges : [])
+          .filter((e) => ids.has(e.from) && ids.has(e.to))
+          .map((e) => ({ id: e.id || uid(), from: e.from, to: e.to, label: e.label || "" }));
+
+        commit();
+        state = { nodes: nodes, edges: edges };
+        if (data.view && typeof data.view.zoom === "number") {
+          view = {
+            x: Number(data.view.x) || 0,
+            y: Number(data.view.y) || 0,
+            zoom: clamp(data.view.zoom, MIN_ZOOM, MAX_ZOOM),
+          };
+        }
+        closePanel();
+        save();
+        render();
+      } catch (err) {
+        window.alert("Não foi possível importar: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  document.getElementById("btn-export").addEventListener("click", exportBoard);
+  const importInput = document.getElementById("import-file");
+  document.getElementById("btn-import").addEventListener("click", () => importInput.click());
+  importInput.addEventListener("change", () => {
+    const file = importInput.files && importInput.files[0];
+    if (file) importBoard(file);
+    importInput.value = "";
   });
 
   /* ------------------------------------------------------------
