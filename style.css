@@ -72,6 +72,38 @@ body {
   color: var(--muted);
 }
 
+.funnel-name {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+.funnel-name input {
+  width: 100%;
+  max-width: 320px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom-color: var(--border);
+  border-radius: 0;
+  padding: 6px 8px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.funnel-name input::placeholder {
+  color: var(--muted);
+  font-weight: 400;
+}
+.funnel-name input:hover,
+.funnel-name input:focus {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom-color: var(--accent);
+}
+
 .actions {
   display: flex;
   align-items: center;
