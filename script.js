@@ -770,12 +770,18 @@
   }
 
   document.getElementById("btn-export").addEventListener("click", exportBoard);
-  const importInput = document.getElementById("import-file");
-  document.getElementById("btn-import").addEventListener("click", () => importInput.click());
-  importInput.addEventListener("change", () => {
-    const file = importInput.files && importInput.files[0];
-    if (file) importBoard(file);
-    importInput.value = "";
+  document.getElementById("btn-import").addEventListener("click", () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json,application/json";
+    input.style.display = "none";
+    input.addEventListener("change", () => {
+      const file = input.files && input.files[0];
+      if (file) importBoard(file);
+      input.remove();
+    });
+    document.body.appendChild(input);
+    input.click();
   });
 
   /* ------------------------------------------------------------
