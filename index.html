@@ -32,6 +32,10 @@
         <button id="btn-zoom-reset" class="btn btn-icon" title="Reiniciar zoom">100%</button>
         <button id="btn-zoom-in" class="btn btn-icon" title="Zoom +">+</button>
         <span class="sep"></span>
+        <button id="btn-export" class="btn" title="Exportar quadro (.json)">Exportar</button>
+        <button id="btn-import" class="btn" title="Importar quadro (.json)">Importar</button>
+        <input id="import-file" type="file" accept=".json,application/json" hidden />
+        <span class="sep"></span>
         <button id="btn-clear" class="btn btn-ghost" title="Limpar quadro">Limpar</button>
       </div>
     </header>
@@ -94,16 +98,6 @@
           <div id="panel-links" class="links"></div>
         </section>
 
-        <section>
-          <div class="section-head">
-            <h3>Arquivos</h3>
-            <label class="btn btn-small file-btn">
-              + Anexar
-              <input id="panel-files" type="file" multiple hidden />
-            </label>
-          </div>
-          <ul id="panel-file-list" class="file-list"></ul>
-        </section>
       </div>
 
       <div class="panel-foot">
