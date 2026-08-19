@@ -19,8 +19,8 @@
   const STORAGE_KEY = "channels-funnels:v1";
   const NODE_WIDTH = 210;
 
-  /** @type {{nodes: any[], edges: any[]}} */
-  let state = { nodes: [], edges: [] };
+  /** @type {{name: string, nodes: any[], edges: any[]}} */
+  let state = { name: "", nodes: [], edges: [] };
 
   // Viewport do canvas
   let view = { x: 120, y: 120, zoom: 1 };
@@ -39,7 +39,11 @@
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.nodes)) {
-        state = { nodes: parsed.nodes, edges: parsed.edges || [] };
+        state = {
+          name: typeof parsed.name === "string" ? parsed.name : "",
+          nodes: parsed.nodes,
+          edges: parsed.edges || [],
+        };
         if (parsed.view) view = parsed.view;
       }
     } catch (err) {
@@ -706,6 +710,7 @@
       format: FILE_FORMAT,
       version: FILE_VERSION,
       exportedAt: new Date().toISOString(),
+      name: state.name,
       view: view,
       nodes: state.nodes,
       edges: state.edges,
@@ -714,8 +719,13 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     const stamp = new Date().toISOString().slice(0, 10);
+    const slug = (state.name || "channels-funnels")
+      .trim()
+      .replace(/[\\/?%*:|"<>]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
     a.href = url;
-    a.download = "channels-funnels-" + stamp + ".json";
+    a.download = (slug || "channels-funnels") + "-" + stamp + ".json";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -751,7 +761,11 @@
           .map((e) => ({ id: e.id || uid(), from: e.from, to: e.to, label: e.label || "" }));
 
         commit();
-        state = { nodes: nodes, edges: edges };
+        state = {
+          name: typeof data.name === "string" ? data.name : "",
+          nodes: nodes,
+          edges: edges,
+        };
         if (data.view && typeof data.view.zoom === "number") {
           view = {
             x: Number(data.view.x) || 0,
@@ -759,6 +773,8 @@
             zoom: clamp(data.view.zoom, MIN_ZOOM, MAX_ZOOM),
           };
         }
+        const nameInput = document.getElementById("funnel-name");
+        if (nameInput) nameInput.value = state.name;
         closePanel();
         save();
         render();
@@ -834,9 +850,19 @@
 
   window.addEventListener("resize", renderEdges);
 
+  const nameInput = document.getElementById("funnel-name");
+  if (nameInput) {
+    nameInput.value = state.name;
+    nameInput.addEventListener("input", () => {
+      state.name = nameInput.value;
+      save();
+    });
+  }
+
   /* ------------------------------------------------------------
      Inicialização
      ------------------------------------------------------------ */
   load();
+  if (nameInput) nameInput.value = state.name;
   render();
 })();
